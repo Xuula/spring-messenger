@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Лучшая в мире соцсеть</title>
+        <link rel="stylesheet" href="styles.css">
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+        <script src="/api.js"></script>
+    </head>
+    <body>
+        <script>
+            $(document).ready(() => {
+                function logout(){
+                    Cookies.remove('session_id');
+                    window.location.href = '/login';
+                }
+
+                $('#logout-button').click(logout);
+                
+                var session_id = Cookies.get('session_id');
+                if(!session_id){
+                    logout();
+                }
+                
+                var user;
+                if(!(user = API.auth.currentuser(session_id))){
+                    logout();
+                }
+                $('.my-nickname').html(user.nick);
+                
+
+                function searchUsers(query){
+                    var users = API.users.search(query);
+                    $('.users').html('');
+                    users.forEach(user => {
+                        var nick = user.nick;
+                        var id = user.id;
+                        $('.users').append(`<div class="user" user_id="${id}"><div class="avatar"></div><span class="nick">${user.nick}</span></div>`);
+                    });
+                    $('.user').click((eventHandle) => {
+                        var companion_id = $(eventHandle.currentTarget).attr('user_id');
+                        openChat(companion_id);
+                    });
+                }
+
+                $('#user-search-button').click(() => {
+                    searchUsers($('#user-search-field').val());
+                });
+
+                searchUsers('');
+
+                var firstMessageTimestamp, lastMessageTimestamp;
+                var currentCompanionId;
+                var nicks;
+                var noMoreOldMessages = true;
+
+                var pageSize = 10;
+
+                function openChat(user_id){
+                    var companion = API.users.get(user_id);
+                    $('.dialog-name').html('Диалог с ' + companion.nick);
+                    currentCompanionId = companion.id;
+                    
+                    nicks = {};
+                    nicks[user.id] = user.nick;
+                    nicks[companion.id] = companion.nick;
+
+                    noMoreOldMessages = false;
+
+                    $(".messages").html('');
+                    
+                    var messages = API.messages.dialog_before(session_id, user_id, pageSize);
+                    firstMessageTimestamp = messages[0].sendingTime;
+                    lastMessageTimestamp = messages[messages.length-1].sendingTime;
+                    putMessages(messages, 'back', true);
+                }
+
+                function putMessages(messages, place='back', messages_is_empty=false){
+                    if(place == "back")
+                        messages = messages.reverse();
+                    var toAppend = "";
+                    messages.forEach(message => {
+                        var author = nicks[message.sender];
+                        var msgText = message.text;
+                        var sending_time = new Date(message.sendingTime).toLocaleTimeString().substring(0, 5);
+                        var msg =  `<div class="message">
+                                        <span class="nick">${author}</span>
+                                        <span class="time">${sending_time}</span> <br>
+                                        <p class="message-body">${msgText}</p>
+                                    </div>`;
+                        
+                        toAppend += msg;
+                    });
+                    if(place == "back"){
+                        $(".messages").html(toAppend + $(".messages").html());
+                    }
+                    else{
+                        $(".messages").append(toAppend);
+                    }
+                }
+
+                setInterval(() => {
+                    if(currentCompanionId){
+                        if($('.central-column').scrollTop() == 0){
+                            if(!noMoreOldMessages){
+                                var newMessages = API.messages.dialog_before(session_id, currentCompanionId,
+                                pageSize, lastMessageTimestamp);
+                                if(newMessages && newMessages.length){
+                                    lastMessageTimestamp = newMessages[0].sendingTime;
+                                    putMessages(newMessages, 'back', false);
+                                }
+                                if(newMessages.length == 0)
+                                    noMoreOldMessages = true;
+                            }
+                        }
+                    }
+                }, 500);
+
+                setInterval(() => {
+                    if(currentCompanionId){
+                        var newMessages = API.messages.dialog_after(session_id, currentCompanionId,
+                        firstMessageTimestamp, pageSize);
+                        if(newMessages && newMessages.length){
+                            firstMessageTimestamp = newMessages[newMessages.length - 1].sendingTime;
+                            putMessages(newMessages, 'front', false);
+                        }
+                    }
+                }, 500);
+
+                $('#message-send-button').click(() => {
+                    var text = $('#message-field').val();
+                    $('#message-field').val('');
+                    API.messages.send(session_id, currentCompanionId, text);
+                });
+            });
+        </script>
+
+        
+        <div class="header"><span class="logo">Лучшая социальная сеть</span></div>
+
+        <div class="side-column left-column">
+            <div class="cell">
+                <h3 class="people">Люди</h3>
+                <div class="user-search-box">
+                    <input id="user-search-field">
+                    <input type="button" value="Поиск" id="user-search-button">
+                </div>
+                <div class="users">
+                    <div class="user">
+                        <!--<div class="avatar"></div>
+                        <span class="nick">Ник</span>-->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="side-column right-column">
+            <div class="cell">
+                <div class="my-avatar"></div>
+                <h3 class="my-nickname">Никнейм</h3>
+            </div>
+        </div>
+
+        <div class="cell central-column-centerer">
+            <div class="central-column">
+                <div class="cell">
+                    <h3 class="dialog-name">Выберите пользователя</h3>
+                    <div class="messages">
+                        <!--<div class="message">
+                            <span class="nick">Ник</span>
+                            <span class="time">12:30</span> <br>
+                            <p class="message-body">Приветб давно не виделись! Как дела?</p>
+                        </div>-->
+                    </div>
+                    <div class="message-input">
+                        <textarea id="message-field"></textarea>
+                        <input type="button" value="Отправить" id="message-send-button">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

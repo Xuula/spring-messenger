@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Лучшая в мире соцсеть</title>
+        <link rel="stylesheet" href="styles.css">
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"></script>
+    </head>
+    <body>
+        <form>
+            Ник: <input type="text" id="nick"> <br>
+            Пароль: <input type="password" id="password"> <br>
+            <input type="button" value="Войти" id="login-button">
+        </form>
+
+        <p style="color: red" id="error-message"></p>
+
+        <script>
+            $('#login-button').click(() => {
+                $.ajax({
+                    url: "/auth",
+                    method: "POST",
+                    dataType: "json",
+                    data: {
+                        nick:     $("#nick").val(),
+                        password: $("#password").val()
+                    }
+                }).done(session => {
+                    Cookies.set('session_id', session.id);
+                    document.location.href="/messenger";
+                }).fail(() => {
+                    $('#error-message').html('Неверный логин или пароль');
+                });
+            });
+        </script>
+    </body>
+</html>
