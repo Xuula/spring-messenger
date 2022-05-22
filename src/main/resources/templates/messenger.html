@@ -25,6 +25,8 @@
                 if(!session_id){
                     logout();
                 }
+
+                $('.session-id-input').val(session_id);
                 
                 var user;
                 if(!(user = API.auth.currentuser(session_id))){
@@ -32,6 +34,11 @@
                 }
                 $('.my-nickname').html(user.nick);
                 
+                function avatarPath(user_id){
+                    return "url(/users/avatars/get?id=" + user_id + ")";
+                }
+
+                $('.my-avatar').css({'--bg-image': avatarPath(user.id)});
 
                 function searchUsers(query){
                     var users = API.users.search(query);
@@ -39,7 +46,9 @@
                     users.forEach(user => {
                         var nick = user.nick;
                         var id = user.id;
-                        $('.users').append(`<div class="user" user_id="${id}"><div class="avatar"></div><span class="nick">${user.nick}</span></div>`);
+                        var avatar = avatarPath(id);
+                        $('.users').append(`<div class="user" user_id="${id}"><div class="avatar" style="--bg-image: ${avatar}"></div>
+                        <span class="nick">${user.nick}</span></div>`);
                     });
                     $('.user').click((eventHandle) => {
                         var companion_id = $(eventHandle.currentTarget).attr('user_id');
@@ -162,6 +171,11 @@
             <div class="cell">
                 <div class="my-avatar"></div>
                 <h3 class="my-nickname">Никнейм</h3>
+                <form action="/users/avatars/set" method="POST" enctype="multipart/form-data">
+                    <input type="text" class="session-id-input" name="session_id">
+                    <input type="file" name="image" accept="image/png, image/jpeg" />
+                    <input type="submit" value="Отправить">
+                </form>
             </div>
         </div>
 

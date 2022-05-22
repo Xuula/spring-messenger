@@ -107,6 +107,11 @@ input, textarea{
     margin-right: 20px;
 }
 
+.avatar, .my-avatar{
+    background-size: 100%;
+    background-image: var(--bg-image);
+}
+
 .central-column-centerer{
     height: 100%;
 }
@@ -155,4 +160,8 @@ input, textarea{
 
 .messages{
     width: 100%;
+}
+
+.session-id-input{
+    display: none;
 }
