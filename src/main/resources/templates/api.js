@@ -14,8 +14,9 @@ const API = {
     },
     messages: {
         dialog_before(session_id, other_id, max_num, before=undefined){
+            console.log(session_id, other_id, max_num, before);
             var data = {session_id:session_id, companion: other_id, max_num: max_num};
-            if(!before)
+            if(before)
                 data.before = before;
             return apiCall('/messages/get_before', 'GET', data);
         },

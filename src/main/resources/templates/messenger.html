@@ -109,6 +109,7 @@
                             if(!noMoreOldMessages){
                                 var newMessages = API.messages.dialog_before(session_id, currentCompanionId,
                                 pageSize, lastMessageTimestamp);
+                                console.log(newMessages);
                                 if(newMessages && newMessages.length){
                                     lastMessageTimestamp = newMessages[0].sendingTime;
                                     putMessages(newMessages, 'back', false);
@@ -125,11 +126,11 @@
                         var newMessages = API.messages.dialog_after(session_id, currentCompanionId,
                         firstMessageTimestamp, pageSize);
                         if(newMessages && newMessages.length){
-                            firstMessageTimestamp = newMessages[newMessages.length - 1].sendingTime;
+                            firstMessageTimestamp = newMessages[0].sendingTime;
                             putMessages(newMessages, 'front', false);
                         }
                     }
-                }, 500);
+                }, 1000);
 
                 $('#message-send-button').click(() => {
                     var text = $('#message-field').val();
